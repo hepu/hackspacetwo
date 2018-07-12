@@ -1,29 +1,35 @@
 import React, { Component } from 'react';
+import TheMovieDbService from '../../services/TheMovieDbService'
+import YearFilter from '../../components/YearFilter'
 
 class SearchableList extends Component {
   constructor(props) {
     super(props)
     this.state = {
       query: '',
-      lastResponse: {}
+      lastResponse: {},
+      year: new Date().getFullYear()
     }
     this.onSubmit = this.onSubmit.bind(this)
     this.onChangeInput = this.onChangeInput.bind(this)
   }
 
-  onSubmit(event) {
-    event.preventDefault()
-    fetch(
-      `https://api.themoviedb.org/3/search/movie?api_key=f808799b8f714cc496cdf7bae948e46c&query=${this.state.query}`
-    ).then((response) => {
-      return response.json()
-    }).then((json) => {
+  fetchMovies() {
+    TheMovieDbService.movie.search(
+      this.state.query,
+      { year: this.state.year }
+    ).then((json) => {
       this.setState({
         lastResponse: json
       })
     }).catch((error) => {
       console.error('ERROR', error)
     })
+  }
+
+  onSubmit(event) {
+    event.preventDefault()
+    this.fetchMovies()
   }
 
   onChangeInput(event) {
@@ -48,6 +54,7 @@ class SearchableList extends Component {
               padding: 20,
               fontSize: 20
             }}/>
+            {this.renderFilters()}
         </form>
         {this.renderResults()}
       </div>
@@ -70,6 +77,18 @@ class SearchableList extends Component {
         <div key={movie.id}>{JSON.stringify(movie.title)}</div>
       )
     })
+  }
+
+  renderFilters() {
+    return (
+      <YearFilter
+        selectedValue={this.state.year}
+        onChange={(year) => {
+          this.setState({ year }, () => {
+            this.fetchMovies()
+          })
+        }}/>
+    )
   }
 }
 
